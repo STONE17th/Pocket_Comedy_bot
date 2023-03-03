@@ -47,10 +47,35 @@ class DataBase:
         phone VARCHAR, url VARCHAR)'''
         self.execute(sql, commit=True)
 
+    def create_table_comic_events(self):
+        sql = '''CREATE TABLE IF NOT EXISTS comic_events 
+        (event_id INTEGER, user_id INTEGER, CONSTRAINT users_PK PRIMARY KEY (event_id, user_id))'''
+        self.execute(sql, commit=True)
+
+    def create_table_guest_events(self):
+        sql = '''CREATE TABLE IF NOT EXISTS guest_events 
+        (event_id INTEGER, user_id INTEGER, CONSTRAINT users_PK PRIMARY KEY (event_id, user_id))'''
+        self.execute(sql, commit=True)
+
     def new_user(self, user: dict):
         parameters = (user.get('tg_id'), user.get('name'), user.get('role'), user.get('phone'),
                       user.get('email'), user.get('city'), False)
         sql = '''INSERT INTO users (tg_id, name, role, phone, email, city, premium) 
+                VALUES (?, ?, ?, ?, ?, ?, ?)'''
+        self.execute(sql, parameters, commit=True)
+
+
+    def get_user_status(self, tg_id: int):
+        parameters = (tg_id,)
+        sql = '''SELECT role FROM users WHERE tg_id=?'''
+        return self.execute(sql, parameters, fetchone=True)
+
+
+
+    def new_event(self, event: dict):
+        parameters = (event.get('name'), event.get('poster'), event.get('description'), event.get('location_id'),
+                      event.get('user_id'), event.get('date'), event.get('price'))
+        sql = '''INSERT INTO events (name, photo, description, location_id, user_id, date, price) 
                 VALUES (?, ?, ?, ?, ?, ?, ?)'''
         self.execute(sql, parameters, commit=True)
 
@@ -62,77 +87,92 @@ class DataBase:
         self.execute(sql, parameters, commit=True)
 
     def all_cities(self):
-        sql = '''SELECT city FROM locations'''
+        sql = '''SELECT DISTINCT city FROM locations'''
         return self.execute(sql, fetchall=True)
 
-    def all_locations(self):
-        sql = '''SELECT name, city FROM locations'''
-        return self.execute(sql, fetchall=True)
-
-    def get_user_role(self, user_id: int):
-        item = (int(user_id),)
-        sql = '''SELECT role FROM users WHERE tg_id=?'''
-        return self.execute(sql, item, fetchone=True)
-
-    def create_table_basket(self):
-        sql = '''CREATE TABLE IF NOT EXISTS basket 
-        (id_order INTEGER PRIMARY KEY AUTOINCREMENT,
-        id_user INTEGER, id_goods INTEGER)'''
-        self.execute(sql, commit=True)
-
-    def create_table_purchase(self):
-        sql = '''CREATE TABLE IF NOT EXISTS purchase 
-        (id_order INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT, phone_number TEXT, email TEXT,
-        shipping TEXT, address TEXT, goods TEXT)'''
-        self.execute(sql, commit=True)
-
-    def add_goods(self, goods: dict):
-        parameters = (goods.get('g_type'), goods.get('image'), goods.get('name'),
-                      goods.get('desc'), goods.get('quantity'), goods.get('price'))
-        sql = '''INSERT INTO goods (g_type, image, name, desc, quantity, price) 
-        VALUES (?, ?, ?, ?, ?, ?)'''
-        self.execute(sql, parameters, commit=True)
-
-    def get_goods(self, **kwargs):
-        sql = '''SELECT * FROM goods WHERE '''
-        sql, parameters = self.extract_kwargs(sql, kwargs)
+    def all_locations(self, city: str):
+        parameters = (city,)
+        sql = '''SELECT DISTINCT name FROM locations WHERE city=?'''
         return self.execute(sql, parameters, fetchall=True)
 
-    def get_basket(self, **kwargs):
-        sql = '''SELECT * FROM basket WHERE '''
+    def get_id_loca(self, **kwargs):
+        sql = '''SELECT location_id FROM locations WHERE '''
         sql, parameters = self.extract_kwargs(sql, kwargs)
+        return self.execute(sql, parameters, fetchone=True)
+
+    def city_locations(self, city: str):
+        parameters = (city,)
+        sql = '''SELECT name FROM locations Where city=?'''
         return self.execute(sql, parameters, fetchall=True)
 
-    def add_to_basket(self, id_user: int, id_goods: int):
-        parameters = (id_user, id_goods)
-        sql = '''INSERT INTO basket (id_user, id_good) VALUES (?, ?)'''
-        self.execute(sql, parameters, commit=True)
-        parameters = (id_goods,)
-        sql = '''UPDATE goods SET quantity = quantity - 1 WHERE id=?'''
-        self.execute(sql, parameters, commit=True)
 
-    def remove_from_basket(self, id_order: int, id_goods: int):
-        parameters = (id_order,)
-        sql = '''DELETE FROM basket WHERE id_order=?'''
-        self.execute(sql, parameters, commit=True)
-        parameters = (id_goods,)
-        sql = '''UPDATE goods SET quantity = quantity + 1 WHERE id=?'''
-        self.execute(sql, parameters, commit=True)
+    def user_events(self, tg_id):
+        parameters = (tg_id,)
+        sql = '''SELECT event_id FROM comic_events Where user_id=?'''
+        return self.execute(sql, parameters, fetchall=True)
 
-    def clear_basket(self, id_user):
-        parameters = (id_user,)
-        sql = '''DELETE FROM basket WHERE id_user=?'''
-        self.execute(sql, parameters, commit=True)
 
-    def add_purchase(self, id_user: int, order: dict, shipping: str):
-        sql = '''INSERT INTO purchase (name, phone_number, email, shipping, address, goods) 
-        VALUES (?, ?, ?, ?, ?, ?)'''
-        for goods in self.get_basket(id_user=id_user):
-            item = self.get_goods(id=int(goods[2]))
-            parameters = (order.get('name'), order.get('phone_number'), order.get('email'),
-                          shipping, str(order.get('shipping_address')), str(item[0][3]))
-            self.execute(sql, parameters, commit=True)
+
+
+    # def create_table_basket(self):
+    #     sql = '''CREATE TABLE IF NOT EXISTS basket
+    #     (id_order INTEGER PRIMARY KEY AUTOINCREMENT,
+    #     id_user INTEGER, id_goods INTEGER)'''
+    #     self.execute(sql, commit=True)
+    #
+    # def create_table_purchase(self):
+    #     sql = '''CREATE TABLE IF NOT EXISTS purchase
+    #     (id_order INTEGER PRIMARY KEY AUTOINCREMENT,
+    #     name TEXT, phone_number TEXT, email TEXT,
+    #     shipping TEXT, address TEXT, goods TEXT)'''
+    #     self.execute(sql, commit=True)
+    #
+    # def add_goods(self, goods: dict):
+    #     parameters = (goods.get('g_type'), goods.get('image'), goods.get('name'),
+    #                   goods.get('desc'), goods.get('quantity'), goods.get('price'))
+    #     sql = '''INSERT INTO goods (g_type, image, name, desc, quantity, price)
+    #     VALUES (?, ?, ?, ?, ?, ?)'''
+    #     self.execute(sql, parameters, commit=True)
+    #
+    # def get_goods(self, **kwargs):
+    #     sql = '''SELECT * FROM goods WHERE '''
+    #     sql, parameters = self.extract_kwargs(sql, kwargs)
+    #     return self.execute(sql, parameters, fetchall=True)
+    #
+    # def get_basket(self, **kwargs):
+    #     sql = '''SELECT * FROM basket WHERE '''
+    #     sql, parameters = self.extract_kwargs(sql, kwargs)
+    #     return self.execute(sql, parameters, fetchall=True)
+    #
+    # def add_to_basket(self, id_user: int, id_goods: int):
+    #     parameters = (id_user, id_goods)
+    #     sql = '''INSERT INTO basket (id_user, id_good) VALUES (?, ?)'''
+    #     self.execute(sql, parameters, commit=True)
+    #     parameters = (id_goods,)
+    #     sql = '''UPDATE goods SET quantity = quantity - 1 WHERE id=?'''
+    #     self.execute(sql, parameters, commit=True)
+    #
+    # def remove_from_basket(self, id_order: int, id_goods: int):
+    #     parameters = (id_order,)
+    #     sql = '''DELETE FROM basket WHERE id_order=?'''
+    #     self.execute(sql, parameters, commit=True)
+    #     parameters = (id_goods,)
+    #     sql = '''UPDATE goods SET quantity = quantity + 1 WHERE id=?'''
+    #     self.execute(sql, parameters, commit=True)
+    #
+    # def clear_basket(self, id_user):
+    #     parameters = (id_user,)
+    #     sql = '''DELETE FROM basket WHERE id_user=?'''
+    #     self.execute(sql, parameters, commit=True)
+    #
+    # def add_purchase(self, id_user: int, order: dict, shipping: str):
+    #     sql = '''INSERT INTO purchase (name, phone_number, email, shipping, address, goods)
+    #     VALUES (?, ?, ?, ?, ?, ?)'''
+    #     for goods in self.get_basket(id_user=id_user):
+    #         item = self.get_goods(id=int(goods[2]))
+    #         parameters = (order.get('name'), order.get('phone_number'), order.get('email'),
+    #                       shipping, str(order.get('shipping_address')), str(item[0][3]))
+    #         self.execute(sql, parameters, commit=True)
 
     @staticmethod
     def extract_kwargs(sql: str, parameters: dict) -> tuple:

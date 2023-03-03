@@ -2,19 +2,22 @@ from loader import dp, db
 from aiogram.types import Message, ReplyKeyboardRemove
 from aiogram.dispatcher import FSMContext
 from states import User
-from keyboards.standart import kb_yes_no, kb_user_role, kb_cancel
+from keyboards.standart import kb_yes_no, kb_user_role, kb_city_select, kb_cancel
+from keyboards.inline import kb_main_menu_comic
+from config import system_pictures, admin_promo_code, comic_promo_code
 
 
 @dp.message_handler(commands=['start', 'старт', 'начать'], state=None)
-async def start_message(message: Message):
-    user_role = db.get_user_role(message.from_user.id)
-    if user_role and user_role[0] == 'Админ':
+async def start_message(message: Message, user_status: str):
+    if user_status == 'Admin':
         await message.answer(f'Приветствую, {message.from_user.first_name}!\n'
                              'Твоя роль Админ!')
-    elif user_role and user_role[0] == 'Комик':
-        await message.answer(f'Приветствую, {message.from_user.first_name}!\n'
-                             'Твоя роль Комик!')
-    elif user_role and user_role[0] == 'Гость':
+    elif user_status == 'Comic':
+        await dp.bot.send_photo(chat_id=message.from_user.id,
+                          photo=system_pictures.get('main'),
+                          caption=f'Привет, {message.from_user.first_name}!\nЯ скучал, че будем делать',
+                          reply_markup=kb_main_menu_comic)
+    elif user_status == 'Guest':
         await message.answer(f'Приветствую, {message.from_user.first_name}!\n'
                              'Твоя роль Гость!')
     else:
@@ -33,13 +36,33 @@ async def enter_name(message: Message, state: FSMContext):
 
 @dp.message_handler(state=User.role)
 async def enter_role(message: Message, state: FSMContext):
-    if message.text in ['Комик', 'Гость']:
-        await state.update_data({'role': message.text})
-        await message.answer(f'Введи свой номер телефона:', reply_markup=kb_cancel)
+    if message.text == 'Организатор':
+        await message.answer(f'Введите промо-код (его можно получить @STONECx3):', reply_markup=kb_cancel)
+        await User.next()
+    elif message.text == 'Комик':
+        await message.answer(f'Введите промо-код (его можно получить @STONECx3):', reply_markup=kb_cancel)
+        await User.next()
+    elif message.text == 'Гость':
+        await state.update_data({'role': 'Guest'})
+        await message.answer(f'Введите номер телефона:', reply_markup=kb_cancel)
+        await User.phone.set()
+    else:
+        await message.answer('Выберите роль: Организатор, Комик или Гость', reply_markup=kb_user_role)
+
+
+@dp.message_handler(state=User.code)
+async def enter_code(message: Message, state: FSMContext):
+    if message.text in admin_promo_code:
+        await state.update_data({'role': 'Admin'})
+        await message.answer(f'Поздравляем! Твой статус Админ!\nВведи свой телефон:', reply_markup=kb_cancel)
+        await User.next()
+    elif message.text in comic_promo_code:
+        await state.update_data({'role': 'Comic'})
+        await message.answer(f'Поздравляем! Твой статус Комик!\nВведи свой телефон:', reply_markup=kb_cancel)
         await User.next()
     else:
-        await message.answer('Выберите роль: комик или гость', reply_markup=kb_user_role)
-
+        await message.answer(f'Введен неверный промо-код!\nВведите промо-код (его можно получить @STONECx3):', reply_markup=kb_user_role)
+        await User.role.set()
 
 @dp.message_handler(state=User.phone)
 async def enter_phone(message: Message, state: FSMContext):
@@ -51,7 +74,7 @@ async def enter_phone(message: Message, state: FSMContext):
 @dp.message_handler(state=User.email)
 async def enter_email(message: Message, state: FSMContext):
     await state.update_data({'email': message.text})
-    await message.answer(f'Введи свой город:', reply_markup=kb_cancel)
+    await message.answer(f'Введи свой город:', reply_markup=kb_city_select)
     await User.next()
 
 
@@ -65,7 +88,7 @@ async def enter_city(message: Message, state: FSMContext):
     await User.next()
 
 @dp.message_handler(state=User.confirm)
-async def enter_confirm(message: Message, state: FSMContext):
+async def enter_confirm(message: Message, user_status, state: FSMContext):
     if message.text == 'Да':
         data = await state.get_data()
         user = {"tg_id": message.from_user.id, "name": data["name"],
@@ -73,9 +96,9 @@ async def enter_confirm(message: Message, state: FSMContext):
                 "email": data["email"], "city": data["city"]}
         db.new_user(user)
         await state.finish()
-        await start_message(message)
+        await start_message(message, user_status)
     else:
         await state.reset_data()
-        await start_message(message)
+        await start_message(message, user_status)
 
 
