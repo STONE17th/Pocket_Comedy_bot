@@ -1,13 +1,13 @@
 from aiogram.types import Message, InputFile, CallbackQuery, InputMediaPhoto
 from loader import dp, db
-from keyboards.callback import main_menu
+from keyboards.callback import menu_main
 from keyboards.inline import kb_no_events
 from config import system_pictures
 # from keyboards import kb_main_menu, main_menu
-# from aiogram.utils.markdown import hbold, hlink, hitalic, hunderline, hstrikethrough
+from aiogram.utils.markdown import hbold, hlink, hitalic, hunderline, hstrikethrough
 
 
-@dp.callback_query_handler(main_menu.filter(button='my_events'))
+@dp.callback_query_handler(menu_main.filter(button='my_events'))
 async def my_events(call: CallbackQuery):
     events_list = db.user_events(call.message.chat.id)
     name = call.message.chat.full_name

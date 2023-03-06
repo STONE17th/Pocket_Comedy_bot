@@ -37,7 +37,8 @@ class DataBase:
         sql = '''CREATE TABLE IF NOT EXISTS events 
         (event_id INTEGER PRIMARY KEY AUTOINCREMENT,
         name VARCHAR, photo VARCHAR, description VARCHAR,
-        location_id INTEGER, user_id INTEGER, date VARCHAR, price REAL)'''
+        location_id INTEGER, user_id INTEGER, date VARCHAR,
+        price REAL)'''
         self.execute(sql, commit=True)
 
     def create_table_locations(self):
@@ -95,10 +96,29 @@ class DataBase:
         sql = '''SELECT DISTINCT name FROM locations WHERE city=?'''
         return self.execute(sql, parameters, fetchall=True)
 
-    def get_id_loca(self, **kwargs):
+    def all_events(self):
+        sql = '''SELECT * FROM events'''
+        return self.execute(sql, fetchall=True)
+
+    def all_orgs(self):
+        sql = '''SELECT DISTINCT user_id FROM events'''
+        return self.execute(sql, fetchall=True)
+
+    def get_location_id(self, **kwargs):
         sql = '''SELECT location_id FROM locations WHERE '''
         sql, parameters = self.extract_kwargs(sql, kwargs)
         return self.execute(sql, parameters, fetchone=True)
+
+    def get_all_events_in_location(self, location_id: int):
+        parameters = (location_id,)
+        sql = '''SELECT * FROM events WHERE location_id=?'''
+        return self.execute(sql, parameters, fetchall=True)
+
+    def get_all_events_by(self, **kwargs):
+        sql = '''SELECT * FROM events WHERE '''
+        sql, parameters = self.extract_kwargs(sql, kwargs)
+        return self.execute(sql, parameters, fetchall=True)
+
 
     def city_locations(self, city: str):
         parameters = (city,)

@@ -136,7 +136,7 @@ async def enter_confirm(message: Message, user_status, state: FSMContext):
             data = await state.get_data()
             city_loca = data["city_loca"]
             name_loca = data["name_loca"]
-            id_loca = db.get_id_loca(city=city_loca, name=name_loca)[0]
+            id_loca = db.get_location_id(city=city_loca, name=name_loca)[0]
             event = {"name": data["name"], "poster": data["poster"],
                      "description": data["description"],
                      "location_id": id_loca, "user_id": message.from_user.id,
