@@ -19,3 +19,8 @@ btn_back = InlineKeyboardButton(text='Назад',
 
 kb_search_filter.row(btn_search_geo, btn_search_date, btn_search_org)
 kb_search_filter.row(btn_back)
+
+
+
+
+# [8, 'drg', 'AgACAgIAAxkBAAIGqGQAAZ3jq_XSbUDQS-Q1D-Be5A2EngACKcUxG7hwCEidDnGA8UGamgEAAwIAA3MAAy4E', 'fg', 17, 409205647, '08.03.2023', 'dfg']

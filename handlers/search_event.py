@@ -5,9 +5,8 @@ from keyboards.inline import create_kb_event_navigation
 from .search_navigation import parse_callback
 
 
-@dp.callback_query_handler(select_event.filter(menu='ev'))
-@dp.callback_query_handler(select_event.filter(menu='select'))
-async def search_geo(call: CallbackQuery):
+@dp.callback_query_handler(select_event.filter(menu=['my_events', 'ev', 'select']))
+async def show_current_event(call: CallbackQuery):
     call_data = parse_callback(call.data)
     events_list = []
     if call_data.get('location'):
@@ -15,10 +14,14 @@ async def search_geo(call: CallbackQuery):
                                          name=call_data.get('location'))[0]
         events_list = db.get_all_events_by(location_id=location_id)
         pass
-    if call_data.get('date'):
+    elif call_data.get('date'):
         events_list = db.get_all_events_by(date=call_data.get('date'))
-    if call_data.get('org_id'):
+    elif call_data.get('org_id'):
         events_list = db.get_all_events_by(user_id=call_data.get('org_id'))
+        print(events_list)
+    elif not call_data.get('city') or call_data.get('menu') == 'my_events':
+        events_id_list = list(map(lambda x: x[0], db.user_events(call.from_user.id)))
+        events_list = [db.get_all_events_by(event_id=event_id)[0] for event_id in events_id_list]
     id_is_num = call_data.get('current_id')
     current_id = int(id_is_num) if isinstance(id_is_num, int) else int(str(id_is_num).split()[1])
 
@@ -46,7 +49,8 @@ async def search_geo(call: CallbackQuery):
     await dp.bot.edit_message_media(media=InputMediaPhoto(media=photo, caption=caption),
                                     chat_id=current_chat_id,
                                     message_id=current_message_id,
-                                    reply_markup=create_kb_event_navigation(call_data, join_button))
+                                    reply_markup=create_kb_event_navigation(call_data, join_button,
+                                                                            call.from_user.id))
 
 
 def from_tuple_to_dict(data: tuple) -> dict:

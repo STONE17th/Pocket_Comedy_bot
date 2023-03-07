@@ -1,10 +1,36 @@
 from loader import dp, db
-from aiogram.types import Message, ReplyKeyboardRemove
+from aiogram.types import Message, InputFile, CallbackQuery, InputMediaPhoto
 from aiogram.dispatcher import FSMContext
 from states import User
 from keyboards.standart import kb_yes_no, kb_user_role, kb_city_select, kb_cancel
 from keyboards.inline import kb_main_menu_comic
+from keyboards.callback import menu_search
 from config import system_pictures, admin_promo_code, comic_promo_code
+
+
+@dp.callback_query_handler(menu_search.filter(menu='main'))
+async def start_message(call: CallbackQuery, user_status: str):
+    current_chat_id = call.message.chat.id
+    current_message_id = call.message.message_id
+    photo = system_pictures.get('main')
+    caption = ''
+    keyboard = kb_main_menu_comic
+    if user_status == 'Admin':
+        caption = f'Приветствую, {call.from_user.first_name}!\nТвоя роль Админ!'
+        keyboard = kb_main_menu_comic
+
+    elif user_status == 'Comic':
+        caption = f'Приветствую, {call.from_user.first_name}!\nТвоя роль Комик!'
+        keyboard = kb_main_menu_comic
+
+    elif user_status == 'Guest':
+        caption = f'Приветствую, {call.from_user.first_name}!\nТвоя роль Гость!'
+        keyboard = kb_main_menu_comic
+
+    await dp.bot.edit_message_media(media=InputMediaPhoto(media=photo, caption=caption),
+                                    chat_id=current_chat_id,
+                                    message_id=current_message_id,
+                                    reply_markup=keyboard)
 
 
 @dp.message_handler(commands=['start', 'старт', 'начать'], state=None)
@@ -14,9 +40,9 @@ async def start_message(message: Message, user_status: str):
                              'Твоя роль Админ!')
     elif user_status == 'Comic':
         await dp.bot.send_photo(chat_id=message.from_user.id,
-                          photo=system_pictures.get('main'),
-                          caption=f'Привет, {message.from_user.first_name}!\nЯ скучал, че будем делать',
-                          reply_markup=kb_main_menu_comic)
+                                photo=system_pictures.get('main'),
+                                caption=f'Привет, {message.from_user.first_name}!\nЯ скучал, че будем делать',
+                                reply_markup=kb_main_menu_comic)
     elif user_status == 'Guest':
         await message.answer(f'Приветствую, {message.from_user.first_name}!\n'
                              'Твоя роль Гость!')
@@ -61,8 +87,10 @@ async def enter_code(message: Message, state: FSMContext):
         await message.answer(f'Поздравляем! Твой статус Комик!\nВведи свой телефон:', reply_markup=kb_cancel)
         await User.next()
     else:
-        await message.answer(f'Введен неверный промо-код!\nВведите промо-код (его можно получить @STONECx3):', reply_markup=kb_user_role)
+        await message.answer(f'Введен неверный промо-код!\nВведите промо-код (его можно получить @STONECx3):',
+                             reply_markup=kb_user_role)
         await User.role.set()
+
 
 @dp.message_handler(state=User.phone)
 async def enter_phone(message: Message, state: FSMContext):
@@ -87,6 +115,7 @@ async def enter_city(message: Message, state: FSMContext):
     await message.answer(message_text, reply_markup=kb_yes_no)
     await User.next()
 
+
 @dp.message_handler(state=User.confirm)
 async def enter_confirm(message: Message, user_status, state: FSMContext):
     if message.text == 'Да':
@@ -100,5 +129,3 @@ async def enter_confirm(message: Message, user_status, state: FSMContext):
     else:
         await state.reset_data()
         await start_message(message, user_status)
-
-
