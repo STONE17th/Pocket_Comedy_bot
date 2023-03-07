@@ -30,7 +30,7 @@ async def select_filter(call: CallbackQuery):
             caption = f'{name}, выбери организатора:'
         case 'event':
             photo = system_pictures.get('main')
-            caption = f'{name}, выбери организатора:'
+            caption = f'{name}, выбери заведение:'
 
     await dp.bot.edit_message_media(media=InputMediaPhoto(media=photo, caption=caption),
                                     chat_id=current_chat_id,
@@ -42,5 +42,5 @@ def parse_callback(data: str) -> dict:
     data = data.split(':')
     data_dict = {'menu': data[1], 'location': data[2], 'city': data[3],
                  'org_id': int(data[4]), 'date': data[5],
-                 'current_id': int(data[6])}
+                 'current_id': int(data[6]) if data[6].isdigit() else data[6]}
     return data_dict

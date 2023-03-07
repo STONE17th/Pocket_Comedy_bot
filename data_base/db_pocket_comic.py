@@ -50,12 +50,12 @@ class DataBase:
 
     def create_table_comic_events(self):
         sql = '''CREATE TABLE IF NOT EXISTS comic_events 
-        (event_id INTEGER, user_id INTEGER, CONSTRAINT users_PK PRIMARY KEY (event_id, user_id))'''
+        (action_id INTEGER PRIMARY KEY AUTOINCREMENT, event_id INTEGER, user_id INTEGER)'''
         self.execute(sql, commit=True)
 
     def create_table_guest_events(self):
         sql = '''CREATE TABLE IF NOT EXISTS guest_events 
-        (event_id INTEGER, user_id INTEGER, CONSTRAINT users_PK PRIMARY KEY (event_id, user_id))'''
+        (purchase_id INTEGER PRIMARY KEY AUTOINCREMENT, event_id INTEGER, user_id INTEGER)'''
         self.execute(sql, commit=True)
 
     def new_user(self, user: dict):
@@ -155,6 +155,20 @@ class DataBase:
         sql = '''SELECT event_id FROM comic_events Where user_id=?'''
         return self.execute(sql, parameters, fetchall=True)
 
+    def get_comics(self, event_id):
+        parameters = (event_id,)
+        sql = '''SELECT user_id FROM comic_events Where event_id=?'''
+        return self.execute(sql, parameters, fetchall=True)
+
+    def add_comic(self, user_id, event_id):
+        parameters = (user_id, event_id)
+        sql = '''INSERT INTO comic_events (user_id, event_id) VALUES (?, ?)'''
+        return self.execute(sql, parameters, commit=True)
+
+    def remove_comic(self, user_id, event_id):
+        parameters = (user_id, event_id)
+        sql = '''DELETE FROM comic_events WHERE user_id=? AND event_id=?'''
+        return self.execute(sql, parameters, commit=True)
 
 
 

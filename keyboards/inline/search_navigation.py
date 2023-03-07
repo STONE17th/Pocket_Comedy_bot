@@ -58,7 +58,13 @@ def create_kb_navigation(data: dict):
                                                                      date=current_date, current_id=0))
 
         buttons_list.append(button)
-    btn_back = InlineKeyboardButton(text='Назад', callback_data=menu_main.new(menu='main', button='back'))
+    if data.get('city') and not data.get('location'):
+        btn_back = InlineKeyboardButton(text='Назад',
+                                              callback_data=menu_search.new(menu='search',
+                                                                            button='city'))
+    else:
+        btn_back = InlineKeyboardButton(text='Назад', callback_data=menu_main.new(menu='main',
+                                                                     button='search'))
 
     btn_prev = InlineKeyboardButton(text='<<<', callback_data=select_event.new(menu=current_menu,
                                                                                location=current_location,
