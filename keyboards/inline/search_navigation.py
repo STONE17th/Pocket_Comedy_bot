@@ -14,14 +14,16 @@ def create_kb_navigation(data: dict):
 
     match current_menu:
         case 'city':
-            target_list = db.all_cities()
+            all_events = {event[4] for event in db.all_events()}
+            target_list = [db.get_city_by_id(location_id) for location_id in all_events]
             current_city = ''
         case 'date':
-            target_list = db.all_events()
+            target_list = db.all_dates()
         case 'org':
             target_list = db.all_orgs()
         case 'event':
-            target_list = db.all_locations(current_city)
+            all_list = [db.get_name_and_city_location(id_loc) for id_loc in {event[4] for event in db.all_events()}]
+            target_list = [location[0] for location in all_list if location[0][1] == current_city]
     menu_list = create_select_list(target_list)
 
     next_id = int(current_id) + 1
@@ -47,6 +49,7 @@ def create_kb_navigation(data: dict):
                 button_menu = 'select'
             case 'org':
                 current_org_id = button_item
+                button_item = db.get_user_name(button_item)[0]
                 button_menu = 'select'
 
         button = InlineKeyboardButton(text=button_item,

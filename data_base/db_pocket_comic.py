@@ -91,6 +91,10 @@ class DataBase:
         sql = '''SELECT DISTINCT city FROM locations'''
         return self.execute(sql, fetchall=True)
 
+    def get_city_by_id(self, location_id):
+        parameters = (location_id,)
+        sql = '''SELECT city FROM locations WHERE location_id=?'''
+        return self.execute(sql, parameters, fetchone=True)
     def all_locations(self, city: str):
         parameters = (city,)
         sql = '''SELECT DISTINCT name FROM locations WHERE city=?'''
@@ -98,6 +102,10 @@ class DataBase:
 
     def all_events(self):
         sql = '''SELECT * FROM events'''
+        return self.execute(sql, fetchall=True)
+
+    def all_dates(self):
+        sql = '''SELECT DISTINCT date FROM events'''
         return self.execute(sql, fetchall=True)
 
     def all_orgs(self):
@@ -108,6 +116,16 @@ class DataBase:
         sql = '''SELECT location_id FROM locations WHERE '''
         sql, parameters = self.extract_kwargs(sql, kwargs)
         return self.execute(sql, parameters, fetchone=True)
+
+    def get_location(self, location_id: int):
+        parameters = (location_id,)
+        sql = '''SELECT * FROM locations WHERE location_id=?'''
+        return self.execute(sql, parameters, fetchall=True)
+
+    def get_name_and_city_location(self, location_id: int):
+        parameters = (location_id,)
+        sql = '''SELECT name, city FROM locations WHERE location_id=?'''
+        return self.execute(sql, parameters, fetchall=True)
 
     def get_all_events_in_location(self, location_id: int):
         parameters = (location_id,)
@@ -122,8 +140,14 @@ class DataBase:
 
     def city_locations(self, city: str):
         parameters = (city,)
-        sql = '''SELECT name FROM locations Where city=?'''
+        sql = '''SELECT locations.name FROM locations Where city=?'''
         return self.execute(sql, parameters, fetchall=True)
+
+
+    def get_user_name(self, user_id: int):
+        parameters = (user_id,)
+        sql = '''SELECT name FROM users WHERE tg_id=?'''
+        return self.execute(sql, parameters, fetchone=True)
 
 
     def user_events(self, tg_id):

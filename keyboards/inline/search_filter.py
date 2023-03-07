@@ -1,5 +1,5 @@
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-from keyboards.callback import menu_navigation, menu_main, menu_search
+from keyboards.callback import menu_main, menu_search
 
 kb_search_filter = InlineKeyboardMarkup(row_width=2)
 

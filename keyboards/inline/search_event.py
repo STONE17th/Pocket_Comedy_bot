@@ -1,38 +1,48 @@
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-from keyboards.callback import menu_main, menu_navigation
+from keyboards.callback import menu_main, select_event
 from loader import db
 
 
-def create_kb_search_event(city: str, name: str, current_id: int):
+def create_kb_event_navigation(data: dict):
     kb_search_event = InlineKeyboardMarkup(row_width=2)
-    location_id = db.get_location_id(city=city, name=name)[0]
-    list_events = db.get_all_events_in_location(location_id)
-    next_id = int(current_id) + 1
-    prev_id = int(current_id) - 1
+    events_list = []
+    if data.get('location'):
+        location_id = db.get_location_id(city=data.get('city'), name=data.get('location'))[0]
+        events_list = db.get_all_events_by(location_id=location_id)
+    if data.get('date'):
+        events_list = db.get_all_events_by(date=data.get('date'))
+    if data.get('org_id'):
+        events_list = db.get_all_events_by(user_id=data.get('org_id'))
+    current_id = int(data.get('current_id', 0))
+    next_id = current_id + 1
+    prev_id = current_id - 1
     if current_id == 0:
-        prev_id = len(list_events) - 1
-    elif current_id == len(list_events) - 1:
+        prev_id = len(events_list) - 1
+    elif current_id == len(events_list) - 1:
         next_id = 0
 
     btn_join = InlineKeyboardButton(text='Записаться', callback_data=menu_main.new(menu='main',
                                                                               button='back'))
 
-    btn_unjoin = InlineKeyboardButton(text='Выписаться', callback_data=menu_main.new(menu='main',
-                                                                              button='back'))
 
     btn_back = InlineKeyboardButton(text='Назад', callback_data=menu_main.new(menu='main',
                                                                               button='back'))
-
-    btn_prev = InlineKeyboardButton(text='<<<', callback_data=menu_select.new(menu='search_event',
-                                                                              city=city,
-                                                                              name=name,
-                                                                              current_id=prev_id))
-    btn_next = InlineKeyboardButton(text='>>>', callback_data=menu_select.new(menu='search_event',
-                                                                              city=city,
-                                                                              name=name,
-                                                                              current_id=next_id))
-
-    kb_search_event.row(btn_prev, btn_join, btn_next)
+    btn_prev = InlineKeyboardButton(text='<<<', callback_data=select_event.new(menu='ev',
+                                                                               location=data.get('location', ''),
+                                                                               city=data.get('city', ''),
+                                                                               org_id=data.get('org_id', 0),
+                                                                               date=data.get('date', ''),
+                                                                               current_id=prev_id))
+    btn_next = InlineKeyboardButton(text='>>>', callback_data=select_event.new(menu='ev',
+                                                                               location=data.get('location', ''),
+                                                                               city=data.get('city', ''),
+                                                                               org_id=data.get('org_id', 0),
+                                                                               date=data.get('date', ''),
+                                                                               current_id=next_id))
+    if len(events_list) > 1:
+        kb_search_event.row(btn_prev, btn_join, btn_next)
+    else:
+        kb_search_event.row(btn_join)
     kb_search_event.row(btn_back)
 
     return kb_search_event
